@@ -21,6 +21,7 @@ INTERVAL = os.getenv("INTERVAL", "1d")
 LIMIT = int(os.getenv("LIMIT", 1000))
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_TO = os.getenv("TELEGRAM_TO")
+SLEEP_SECONDS = int(os.getenv("SLEEP_SECONDS", 3600))  # default: 1 hour
 
 
 # -----------------------------
@@ -143,24 +144,26 @@ def send_telegram_message(message):
 # Main script
 # -----------------------------
 if __name__ == "__main__":
-    df = fetch_binance(SYMBOL, INTERVAL, LIMIT)
-    print(f"[INFO] Last actual price for {SYMBOL}: {df['price'].iloc[-1]:.4f}")
+    while True:
+        df = fetch_binance(SYMBOL, INTERVAL, LIMIT)
+        print(f"[INFO] Last actual price for {SYMBOL}: {df['price'].iloc[-1]:.4f}")
 
-    forecast = run_auto_arima_forecast(df, steps=STEPS)
+        forecast = run_auto_arima_forecast(df, steps=STEPS)
 
-    # Take top 5 forecasted results
-    top5 = forecast.head(5)
+        # Take top 5 forecasted results
+        top5 = forecast.head(5)
 
-    # Print to console
-    print("\n[INFO] Top 5 forecasted prices:")
-    print(top5[['date', 'predicted_price', 'pct_change']])
+        # Print to console
+        print("\n[INFO] Top 5 forecasted prices:")
+        print(top5[['date', 'predicted_price', 'pct_change']])
 
-    # Prepare Telegram message
-    message_lines = [f"*ARIMA Forecast for {SYMBOL}*"]
-    for idx, row in top5.iterrows():
-        line = f"{row['date'].strftime('%d/%m %H:%M')}: {row['predicted_price']:.4f} ({row['pct_change']:+.2f}%)"
-        message_lines.append(line)
-    message = "\n".join(message_lines)
+        # Prepare Telegram message
+        message_lines = [f"*ARIMA Forecast for {SYMBOL}*"]
+        for idx, row in top5.iterrows():
+            line = f"{row['date'].strftime('%d/%m %H:%M')}: {row['predicted_price']:.4f} ({row['pct_change']:+.2f}%)"
+            message_lines.append(line)
+        message = "\n".join(message_lines)
 
-    send_telegram_message(message)
-    print("[INFO] Script completed successfully.")
+        send_telegram_message(message)
+        print("[INFO] Script completed successfully.")
+        time.sleep(SLEEP_SECONDS)
