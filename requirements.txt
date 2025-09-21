@@ -1,0 +1,5 @@
+requests
+pandas
+numpy
+statsmodels
+python-dotenv
