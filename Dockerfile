@@ -1,11 +1,14 @@
-FROM python:3.13.7-alpine3.22
-
-WORKDIR /usr/src/app
-
-COPY requirements.txt ./
+# Builder stage
+FROM python:3.13.7-alpine3.22 AS builder
+WORKDIR /app
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
 COPY . .
-ENV SYMBOL=DOTUSDT STEPS=30 INTERVAL=1d LIMIT=1000 SLEEP_SECONDS=3600
-ENV TELEGRAM_TOKEN= TELEGRAM_TO=
-CMD [ "python", "./x_arima_forecast.py" ]
+
+# Final stage
+FROM gcr.io/distroless/static-debian12
+COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
+COPY --from=builder /usr/local/bin/python3.13 /usr/local/bin/python3.13
+COPY --from=builder /app /app
+WORKDIR /app
+CMD ["/usr/local/bin/python3.13", "x_arima_forecast.py"]
