@@ -23,7 +23,7 @@ TELEGRAM_TO = os.getenv("TELEGRAM_TO")
 SLEEP_SECONDS = int(os.getenv("SLEEP_SECONDS", 3600))  # default: 1 hour
 THRESHOLD_BUY = float(os.getenv("THRESHOLD_BUY", 2))
 THRESHOLD_SELL = float(os.getenv("THRESHOLD_SELL", -2))
-
+previous_results = {}
 # -----------------------------
 # Functions
 # -----------------------------
@@ -122,16 +122,28 @@ if __name__ == "__main__":
         for symbol in SYMBOLS:
             print(f"\n[INFO] Starting forecast for {symbol} at {pd.Timestamp.now()}")
             df = fetch_binance(symbol)
-            print(f"[INFO] Last actual price: {df['price'].iloc[-1]:.4f}")
+
+            current_price = df["price"].iloc[-1]
+            prev_price = previous_results.get(symbol)
+            percent_change = None
+            if prev_price is not None:
+                percent_change = ((current_price - prev_price) / prev_price) * 100
+            previous_results[symbol] = current_price
+            
+            print(f"[INFO] Last actual price: {current_price:.4f}")
             forecast = run_auto_arima_forecast(df)
 
-            top5 = forecast.head(5)
-            print("\n[INFO] Top 5 forecasted prices:")
-            print(top5[['date','predicted_price','pct_change']])
+            #top5 = forecast.head(5)
+            #print("\n[INFO] Top 5 forecasted prices:")
+            #print(top5[['date','predicted_price','pct_change']])
 
             # Build Telegram message with full timestamp
             message_lines = [f"*ARIMA Forecast for {symbol}*"]
-            message_lines.append(f"📢 Last actual price: {df['price'].iloc[-1]:.4f}")
+            if percent_change is not None:
+                message_lines.append(f"📢 Last actual price: {current_price:.4f} Δ Change: {percent_change:.2f}%")
+            else:
+                message_lines.append(f"📢 Last actual price: {current_price:.4f}")
+            
             for idx, row in forecast.head(5).iterrows():
                 pct = row['pct_change']
                 if pct > THRESHOLD_BUY:
