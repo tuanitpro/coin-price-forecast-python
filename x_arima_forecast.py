@@ -21,6 +21,8 @@ LIMIT = int(os.getenv("LIMIT", 1000))
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_TO = os.getenv("TELEGRAM_TO")
 SLEEP_SECONDS = int(os.getenv("SLEEP_SECONDS", 3600))  # default: 1 hour
+THRESHOLD_BUY = float(os.getenv("THRESHOLD_BUY", 2))
+THRESHOLD_SELL = float(os.getenv("THRESHOLD_SELL", -2))
 
 # -----------------------------
 # Functions
@@ -129,8 +131,16 @@ if __name__ == "__main__":
 
             # Build Telegram message with full timestamp
             message_lines = [f"*ARIMA Forecast for {symbol}*"]
-            for idx, row in top5.iterrows():
-                line = f"{row['date'].strftime('%Y-%m-%d %H:%M:%S')}: {row['predicted_price']:.4f} ({row['pct_change']:+.2f}%)"
+            message_lines.append(f"📢 Last actual price: {df['price'].iloc[-1]:.4f}")
+            for idx, row in forecast.head(5).iterrows():
+                pct = row['pct_change']
+                if pct > THRESHOLD_BUY:
+                    label = "Buy ✅"
+                elif pct < THRESHOLD_SELL:
+                    label = "Sell ❌"
+                else:
+                    label = "Hold 🚀"
+                line = f"{row['date'].strftime('%d/%m/%y %H:%M')}: {row['predicted_price']:.4f} ({pct:+.2f}%) - {label}"
                 message_lines.append(line)
             message = "\n".join(message_lines)
 
