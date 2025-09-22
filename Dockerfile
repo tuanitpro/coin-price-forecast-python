@@ -11,4 +11,4 @@ COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin/python3.13 /usr/local/bin/python3.13
 COPY --from=builder /app /app
 WORKDIR /app
-CMD ["/usr/local/bin/python3.13", "x_arima_forecast.py"]
+CMD ["python", "./x_arima_forecast.py"]
