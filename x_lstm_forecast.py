@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 from datetime import timedelta
 from sklearn.preprocessing import MinMaxScaler
+from telegram_notifier import TelegramNotifier
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 from dotenv import load_dotenv
@@ -18,8 +19,6 @@ SYMBOLS = [s.strip().upper() for s in os.getenv("SYMBOLS", "DOTUSDT,ADAUSDT").sp
 STEPS = int(os.getenv("STEPS", 5))
 INTERVAL = os.getenv("INTERVAL", "1d")
 LIMIT = int(os.getenv("LIMIT", 500))
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-TELEGRAM_TO = os.getenv("TELEGRAM_TO")
 SLEEP_SECONDS = int(os.getenv("SLEEP_SECONDS", 3600))
 THRESHOLD_BUY = float(os.getenv("THRESHOLD_BUY", 2))
 THRESHOLD_SELL = float(os.getenv("THRESHOLD_SELL", -2))
@@ -73,24 +72,12 @@ def predict_future(model, last_seq, scaler, steps=STEPS):
     predictions = np.array(predictions).reshape(-1,1)
     return scaler.inverse_transform(predictions).flatten()
 
-def send_telegram_message(message):
-    if not TELEGRAM_TOKEN or not TELEGRAM_TO:
-        print("[WARN] Telegram token or chat ID not set")
-        return
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    payload = {"chat_id": TELEGRAM_TO, "text": message, "parse_mode": "Markdown"}
-    try:
-        r = requests.post(url, data=payload, timeout=10)
-        r.raise_for_status()
-        print("[INFO] Telegram message sent")
-    except Exception as e:
-        print(f"[ERROR] Failed to send Telegram message: {e}")
-
 # -----------------------------
 # Main Loop
 # -----------------------------
 if __name__ == "__main__":
     while True:
+        notifier = TelegramNotifier()
         for symbol in SYMBOLS:
             print(f"\n[INFO] Forecasting {symbol} at {pd.Timestamp.now()}")
             try:
@@ -131,7 +118,7 @@ if __name__ == "__main__":
                 message_lines.append(line)
 
             message = "\n".join(message_lines)
-            send_telegram_message(message)
+            notifier.send(message)
 
         print(f"[INFO] Sleeping for {SLEEP_SECONDS} seconds...\n")
         time.sleep(SLEEP_SECONDS)

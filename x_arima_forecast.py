@@ -8,6 +8,8 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 import warnings
 from dotenv import load_dotenv
 
+from telegram_notifier import TelegramNotifier
+
 warnings.filterwarnings("ignore")
 
 # -----------------------------
@@ -18,8 +20,6 @@ SYMBOLS = [s.strip().upper() for s in os.getenv("SYMBOLS", "DOTUSDT").split(",")
 STEPS = int(os.getenv("STEPS", 30))
 INTERVAL = os.getenv("INTERVAL", "1d")
 LIMIT = int(os.getenv("LIMIT", 1000))
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-TELEGRAM_TO = os.getenv("TELEGRAM_TO")
 SLEEP_SECONDS = int(os.getenv("SLEEP_SECONDS", 3600))  # default: 1 hour
 THRESHOLD_BUY = float(os.getenv("THRESHOLD_BUY", 2))
 THRESHOLD_SELL = float(os.getenv("THRESHOLD_SELL", -2))
@@ -101,26 +101,13 @@ def run_auto_arima_forecast(df, steps=STEPS):
     return fc
 
 
-def send_telegram_message(message):
-    if not TELEGRAM_TOKEN or not TELEGRAM_TO:
-        print("[WARN] Telegram token or chat ID not set")
-        return
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    payload = {"chat_id": TELEGRAM_TO, "text": message, "parse_mode": "Markdown"}
-    try:
-        r = requests.post(url, data=payload, timeout=10)
-        r.raise_for_status()
-        print("✅ [INFO] Telegram message sent successfully")
-    except Exception as e:
-        print(f"🚫 [ERROR] Failed to send Telegram message: {e}")
-
-
 # -----------------------------
 # Main loop
 # -----------------------------
 if __name__ == "__main__":
     while True:
         now = datetime.now(timezone.utc)
+        notifier = TelegramNotifier()
         for symbol in SYMBOLS:
             print(f"\n[INFO] Starting forecast for {symbol} at {pd.Timestamp.now()}")
             df = fetch_binance(symbol)
@@ -159,7 +146,7 @@ if __name__ == "__main__":
                 message_lines.append(line)
             message = "\n".join(message_lines)
 
-            send_telegram_message(message)
+            notifier.send(message)
 
         print(f"[INFO] Sleeping for {SLEEP_SECONDS} seconds...\n")
         time.sleep(SLEEP_SECONDS)
