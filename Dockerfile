@@ -1,14 +1,17 @@
-# Builder stage
-FROM python:3.13.7-alpine3.22 AS builder
+# Stage 1: Build dependencies
+FROM python:3.13-slim-buster AS builder
+
 WORKDIR /app
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Stage 2: Create the final, minimal image
+FROM python:3.13-slim-buster
+
+WORKDIR /app
+
+COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
 COPY . .
 
-# Final stage
-FROM gcr.io/distroless/static-debian12
-COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
-COPY --from=builder /usr/local/bin/python3.13 /usr/local/bin/python3.13
-COPY --from=builder /app /app
-WORKDIR /app
-CMD ["python", "./x_arima_forecast.py"]
+CMD ["python", "x_arima_forecast.py"]
