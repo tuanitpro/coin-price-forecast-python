@@ -3,7 +3,7 @@ import time
 import requests
 import pandas as pd
 import numpy as np
-from datetime import timedelta
+from datetime import datetime, timezone
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 import warnings
 from dotenv import load_dotenv
@@ -97,6 +97,7 @@ def run_auto_arima_forecast(df, steps=STEPS):
         "upper_ci": ci.iloc[:,1].values
     })
     fc["pct_change"] = fc["predicted_price"].pct_change().mul(100)
+    fc["date"] = pd.to_datetime(fc["date"], utc=True)
     return fc
 
 
@@ -109,9 +110,9 @@ def send_telegram_message(message):
     try:
         r = requests.post(url, data=payload, timeout=10)
         r.raise_for_status()
-        print("[INFO] Telegram message sent successfully")
+        print("✅ [INFO] Telegram message sent successfully")
     except Exception as e:
-        print(f"[ERROR] Failed to send Telegram message: {e}")
+        print(f"🚫 [ERROR] Failed to send Telegram message: {e}")
 
 
 # -----------------------------
@@ -119,6 +120,7 @@ def send_telegram_message(message):
 # -----------------------------
 if __name__ == "__main__":
     while True:
+        now = datetime.now(timezone.utc)
         for symbol in SYMBOLS:
             print(f"\n[INFO] Starting forecast for {symbol} at {pd.Timestamp.now()}")
             df = fetch_binance(symbol)
@@ -130,28 +132,29 @@ if __name__ == "__main__":
                 percent_change = ((current_price - prev_price) / prev_price) * 100
             previous_results[symbol] = current_price
             
-            print(f"[INFO] Last actual price: {current_price:.4f}")
+            print(f"📢 📢 📢 [INFO] Last actual price: {current_price:.4f}")
             forecast = run_auto_arima_forecast(df)
+            forecast = forecast[forecast["date"] > now]
 
-            #top5 = forecast.head(5)
-            #print("\n[INFO] Top 5 forecasted prices:")
-            #print(top5[['date','predicted_price','pct_change']])
+            top5 = forecast.head(5)
+            print("\n[INFO] Top 5 forecasted prices:")
+            print(top5[['date','predicted_price','pct_change']])
 
             # Build Telegram message with full timestamp
-            message_lines = [f"*ARIMA Forecast for {symbol}*"]
+            message_lines = [f"📢 📢 📢 *ARIMA Forecast for {symbol}*"]
             if percent_change is not None:
-                message_lines.append(f"📢 Last actual price: {current_price:.4f} Δ Change: {percent_change:.2f}%")
+                message_lines.append(f"Last actual price: {current_price:.4f} 🔥 Change: {percent_change:.2f}%")
             else:
-                message_lines.append(f"📢 Last actual price: {current_price:.4f}")
+                message_lines.append(f"Last actual price: {current_price:.4f}")
             
             for idx, row in forecast.head(5).iterrows():
                 pct = row['pct_change']
                 if pct > THRESHOLD_BUY:
                     label = "Buy ✅"
                 elif pct < THRESHOLD_SELL:
-                    label = "Sell ❌"
+                    label = "Sell 🎯"
                 else:
-                    label = "Hold 🚀"
+                    label = "Hold 🚫"
                 line = f"{row['date'].strftime('%d/%m/%y %H:%M')}: {row['predicted_price']:.4f} ({pct:+.2f}%) - {label}"
                 message_lines.append(line)
             message = "\n".join(message_lines)
