@@ -1,17 +1,28 @@
-# Stage 1: Build dependencies
-FROM python:3.13-slim-buster AS builder
+FROM python:3.13-slim
 
-WORKDIR /app
+# Prevent Python from writing .pyc files and buffering stdout
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
-COPY requirements.txt .
+# Install only required system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libatlas-base-dev \
+    gfortran \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /usr/src/app
+
+# Copy dependencies first (to leverage Docker layer caching)
+COPY requirements.txt ./
+
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Stage 2: Create the final, minimal image
-FROM python:3.13-slim-buster
-
-WORKDIR /app
-
-COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
+# Copy application code
 COPY . .
+
+# Run as non-root user
+RUN useradd -m appuser
+USER appuser
 
 CMD ["python", "x_arima_forecast.py"]
