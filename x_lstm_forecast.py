@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from datetime import timedelta
 from sklearn.preprocessing import MinMaxScaler
-from telegram_notifier import TelegramNotifier
+from telegram import TelegramNotifier
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 from dotenv import load_dotenv

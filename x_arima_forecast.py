@@ -1,6 +1,5 @@
 import os
 import time
-import requests
 import pandas as pd
 import numpy as np
 from datetime import datetime, timezone
@@ -8,7 +7,8 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 import warnings
 from dotenv import load_dotenv
 
-from telegram_notifier import TelegramNotifier
+from binance import Binance
+from telegram import TelegramNotifier
 
 warnings.filterwarnings("ignore")
 
@@ -18,8 +18,6 @@ warnings.filterwarnings("ignore")
 load_dotenv()
 SYMBOLS = [s.strip().upper() for s in os.getenv("SYMBOLS", "DOTUSDT").split(",")]
 STEPS = int(os.getenv("STEPS", 30))
-INTERVAL = os.getenv("INTERVAL", "1d")
-LIMIT = int(os.getenv("LIMIT", 1000))
 SLEEP_SECONDS = int(os.getenv("SLEEP_SECONDS", 3600))  # default: 1 hour
 THRESHOLD_BUY = float(os.getenv("THRESHOLD_BUY", 2))
 THRESHOLD_SELL = float(os.getenv("THRESHOLD_SELL", -2))
@@ -27,35 +25,6 @@ previous_results = {}
 # -----------------------------
 # Functions
 # -----------------------------
-def fetch_binance(symbol, interval=INTERVAL, limit=LIMIT, max_retries=3):
-    url = "https://api.binance.com/api/v3/klines"
-    params = {"symbol": symbol.upper(), "interval": interval, "limit": limit}
-
-    for attempt in range(max_retries):
-        try:
-            r = requests.get(url, params=params, timeout=30)
-            r.raise_for_status()
-            data = r.json()
-            print(f"[INFO] Fetched {len(data)} klines for {symbol}")
-            break
-        except Exception as e:
-            print(f"[WARN] Attempt {attempt+1} failed for {symbol}: {e}")
-            if attempt + 1 == max_retries:
-                raise
-            time.sleep(2)
-
-    cols = [
-        "open_time","open","high","low","close","volume",
-        "close_time","qav","trades","taker_base","taker_quote","ignore"
-    ]
-    df = pd.DataFrame(data, columns=cols)
-    df["date"] = pd.to_datetime(df["open_time"], unit="ms")
-    df["price"] = pd.to_numeric(df["close"], errors="coerce")
-    df = df[["date","price"]].set_index("date")
-    df = df.asfreq(pd.infer_freq(df.index) or "D")
-    df["price"] = df["price"].interpolate()
-    return df
-
 
 def auto_arima_grid_search(y, p_range=(0,3), d_range=(0,2), q_range=(0,3)):
     best_aic = np.inf
@@ -108,9 +77,10 @@ if __name__ == "__main__":
     while True:
         now = datetime.now(timezone.utc)
         notifier = TelegramNotifier()
+        binance = Binance()
         for symbol in SYMBOLS:
             print(f"\n[INFO] Starting forecast for {symbol} at {pd.Timestamp.now()}")
-            df = fetch_binance(symbol)
+            df = binance.fetch(symbol)
 
             current_price = df["price"].iloc[-1]
             prev_price = previous_results.get(symbol)
