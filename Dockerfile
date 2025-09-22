@@ -8,7 +8,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN useradd -m appuser
-USER appuser
-
 CMD [ "python", "./x_arima_forecast.py" ]
