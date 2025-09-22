@@ -7,8 +7,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Install only required system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    libatlas-base-dev \
     gfortran \
+    libopenblas-dev \
+    liblapack-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/app
