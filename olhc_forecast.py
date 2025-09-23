@@ -73,7 +73,6 @@ class OLHCForecast:
                 f"Predicted Next Close: {predicted_price:.4f}\n"
                 f"Change: {change_pct:+.2f}%\n"
             )
-
             # decide signal
             if change_pct > self.threshold:
                 msg += "Signal: *Buy ✅*"
@@ -81,5 +80,5 @@ class OLHCForecast:
                 msg += "Signal: *Sell 🎯*"
             else:
                 msg += "Signal: *Hold 🚫*"
-
+            print(msg)
             notifier.send(msg)
