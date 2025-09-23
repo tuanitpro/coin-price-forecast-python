@@ -18,8 +18,8 @@ SLEEP_SECONDS = int(os.getenv("SLEEP_SECONDS", 3600))  # default: 1 hour
 # -----------------------------
 
 if __name__ == "__main__":
+    forecast = ARIMAForecast()
     while True:
-        forecast = ARIMAForecast()
         forecast.run()
         print(f"[INFO] Sleeping for {SLEEP_SECONDS} seconds...\n")
         time.sleep(SLEEP_SECONDS)
