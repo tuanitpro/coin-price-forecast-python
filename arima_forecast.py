@@ -11,8 +11,7 @@ class ARIMAForecast:
     def __init__(self):
         self.steps = int(os.getenv("STEPS", 30))
         self.symbols = [s.strip().upper() for s in os.getenv("SYMBOLS", "DOTUSDT").split(",")]
-        self.threshold_buy = float(os.getenv("THRESHOLD_BUY", 2))
-        self.threshold_sell = float(os.getenv("THRESHOLD_SELL", -2))
+        self.threshold = float(os.getenv("PRICE_CHANGE_THRESHOLD", 2))
         self.previous_results = {}
 
         if not self.symbols:
@@ -44,7 +43,7 @@ class ARIMAForecast:
 
 
     def _run_auto_arima_forecast(self, df):
-        y = np.log(df["price"])
+        y = np.log(df["close"])
         model, order = self._auto_arima_grid_search(y)
         if model is None:
             raise ValueError("[ERROR] No valid ARIMA model found during grid search.")
@@ -72,7 +71,7 @@ class ARIMAForecast:
             print(f"\n[INFO] Starting forecast for {symbol} at {pd.Timestamp.now()}")
             df = binance.fetch(symbol)
 
-            current_price = df["price"].iloc[-1]
+            current_price = df["close"].iloc[-1]
             prev_price = self.previous_results.get(symbol)
             percent_change = None
             if prev_price is not None:
@@ -96,9 +95,9 @@ class ARIMAForecast:
             
             for idx, row in forecast.head(5).iterrows():
                 pct = row['pct_change']
-                if pct > self.threshold_buy:
+                if pct > self.threshold:
                     label = "Buy ✅"
-                elif pct < self.threshold_sell:
+                elif pct < self.threshold:
                     label = "Sell 🎯"
                 else:
                     label = "Hold 🚫"

@@ -3,7 +3,8 @@ import time
 import warnings
 from dotenv import load_dotenv
 
-from arima_forecast import ARIMAForecast
+# from arima_forecast import ARIMAForecast
+from olhc_forecast import OLHCForecast
 
 warnings.filterwarnings("ignore")
 
@@ -18,7 +19,7 @@ SLEEP_SECONDS = int(os.getenv("SLEEP_SECONDS", 3600))  # default: 1 hour
 # -----------------------------
 
 if __name__ == "__main__":
-    forecast = ARIMAForecast()
+    forecast = OLHCForecast()
     while True:
         forecast.run()
         print(f"[INFO] Sleeping for {SLEEP_SECONDS} seconds...\n")

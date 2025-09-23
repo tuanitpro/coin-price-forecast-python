@@ -19,8 +19,7 @@ load_dotenv()
 SYMBOLS = [s.strip().upper() for s in os.getenv("SYMBOLS", "DOTUSDT").split(",")]
 STEPS = int(os.getenv("STEPS", 30))
 SLEEP_SECONDS = int(os.getenv("SLEEP_SECONDS", 3600))  # default: 1 hour
-THRESHOLD_BUY = float(os.getenv("THRESHOLD_BUY", 2))
-THRESHOLD_SELL = float(os.getenv("THRESHOLD_SELL", -2))
+PRICE_CHANGE_THRESHOLD = float(os.getenv("PRICE_CHANGE_THRESHOLD", 2))
 previous_results = {}
 # -----------------------------
 # Functions
@@ -51,7 +50,7 @@ def auto_arima_grid_search(y, p_range=(0,3), d_range=(0,2), q_range=(0,3)):
 
 
 def run_auto_arima_forecast(df, steps=STEPS):
-    y = np.log(df["price"])
+    y = np.log(df["close"])
     model, order = auto_arima_grid_search(y)
     forecast = model.get_forecast(steps=steps)
     pred_mean = np.exp(forecast.predicted_mean)
@@ -82,7 +81,7 @@ if __name__ == "__main__":
             print(f"\n[INFO] Starting forecast for {symbol} at {pd.Timestamp.now()}")
             df = binance.fetch(symbol)
 
-            current_price = df["price"].iloc[-1]
+            current_price = df["close"].iloc[-1]
             prev_price = previous_results.get(symbol)
             percent_change = None
             if prev_price is not None:
@@ -106,9 +105,9 @@ if __name__ == "__main__":
             
             for idx, row in forecast.head(5).iterrows():
                 pct = row['pct_change']
-                if pct > THRESHOLD_BUY:
+                if pct > PRICE_CHANGE_THRESHOLD:
                     label = "Buy ✅"
-                elif pct < THRESHOLD_SELL:
+                elif pct < -PRICE_CHANGE_THRESHOLD:
                     label = "Sell 🎯"
                 else:
                     label = "Hold 🚫"

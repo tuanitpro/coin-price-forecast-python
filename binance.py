@@ -34,8 +34,8 @@ class Binance:
         ]
         df = pd.DataFrame(data, columns=cols)
         df["date"] = pd.to_datetime(df["open_time"], unit="ms")
-        df["price"] = pd.to_numeric(df["close"], errors="coerce")
-        df = df[["date","price"]].set_index("date")
-        df = df.asfreq(pd.infer_freq(df.index) or "D")
-        df["price"] = df["price"].interpolate()
+        for c in ["open","high","low","close","volume"]:
+            df[c] = pd.to_numeric(df[c], errors="coerce")
+        df = df.sort_values("date")
+        df = df.set_index("date")
         return df
