@@ -44,7 +44,6 @@ class OLHCForecast:
         notifier = TelegramNotifier()
         binance = Binance()
         for symbol in self.symbols:
-            print(f"📢 📢 📢 [INFO] Running ML price forecast {symbol} at {datetime.now(timezone.utc)}")
             df = binance.fetch(symbol)
             df_feat = self._build_features(df)
             
@@ -67,10 +66,10 @@ class OLHCForecast:
 
             # build message
             msg = (
-                f"📢 📢 📢 *ML Forecast for {symbol}*\n"
+                f"📢 📢 📢 *ML Forecast for #{symbol}*\n"
                 f"Time: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}\n"
                 f"Current Price: {current_price:.4f}\n"
-                f"Predicted Next Close: {predicted_price:.4f}\n"
+                f"Next Price: {predicted_price:.4f}\n"
                 f"Change: {change_pct:+.2f}%\n"
             )
             # decide signal
