@@ -1,4 +1,4 @@
-FROM python:3.13-slim AS builder
+FROM python:3.13-alpine AS builder
 RUN apk add --no-cache musl-dev gcc g++ make
 RUN pip install --no-cache-dir pyinstaller
 
