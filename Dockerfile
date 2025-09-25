@@ -1,9 +1,11 @@
-FROM python:3.13-slim
-WORKDIR /usr/src/app
+FROM python:3.13-alpine as builder
+RUN apk add --no-cache musl-dev gcc g++ make
+RUN pip install pyinstaller
 
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
-
+WORKDIR /app
 COPY . .
+RUN pyinstaller --onefile main.py
 
-CMD [ "python", "./main.py" ]
+FROM scratch
+COPY --from=builder /app/dist/main /
+CMD ["./main"]
