@@ -1,11 +1,10 @@
-FROM python:3.13-alpine as builder
-RUN apk add --no-cache musl-dev gcc g++ make
-RUN pip install pyinstaller
-
-WORKDIR /app
+FROM python:3.13-slim AS builder
+WORKDIR /usr/src/app
 
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
+RUN apk add --no-cache musl-dev gcc g++ make
+RUN pip install pyinstaller
 
 COPY . .
 RUN pyinstaller --onefile main.py
@@ -13,5 +12,5 @@ RUN pyinstaller --onefile main.py
 FROM gcr.io/distroless/static-debian12
 WORKDIR /bin
 
-COPY --from=builder /app/dist/main .
-CMD ["main"]
+COPY --from=builder /usr/src/app/dist/main .
+CMD ["./main"]
