@@ -13,5 +13,5 @@ RUN pyinstaller --onefile main.py
 FROM gcr.io/distroless/static-debian12
 WORKDIR /bin
 
-COPY --from=builder /usr/src/app/dist/main .
+COPY --from=builder /app/dist/main .
 CMD ["./main"]
