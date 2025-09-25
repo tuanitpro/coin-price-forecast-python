@@ -5,8 +5,8 @@ RUN pip install --no-cache-dir pyinstaller
 WORKDIR /app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
-COPY . .
 
+COPY . .
 RUN pyinstaller --onefile main.py
 
 FROM alpine:3.20
