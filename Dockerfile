@@ -1,8 +1,8 @@
-FROM python:3.13 AS builder
-WORKDIR /usr/src/app
-
+FROM python:3.12-alpine as builder
 RUN apk add --no-cache musl-dev gcc g++ make
 RUN pip install pyinstaller
+
+WORKDIR /app
 
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
