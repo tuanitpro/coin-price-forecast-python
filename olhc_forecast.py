@@ -71,14 +71,15 @@ class OLHCForecast:
             )
             # decide signal
             if change_pct > self.threshold:
-                msg += "Signal: *Buy ✅*"
+                msg += "Signal: *Buy ✅*\n"
             elif change_pct < -self.threshold:
-                msg += "Signal: *Sell 🎯*"
+                msg += "Signal: *Sell 🎯*\n"
             else:
-                msg += "Signal: *Hold 🚫*"
-                msg+= f"\nCurrent Price: {current_price:.4f}\n"
-                msg+= f"Next Price: {predicted_price:.4f}\n"
-                msg += f"Time: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}"
+                msg += "Signal: *Hold 🚫*\n"
+                
+            msg += f"Current Price: {current_price:.4f}\n"
+            msg += f"Next Price: {predicted_price:.4f}\n"
+            msg += f"Time: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}"
 
             print(msg)
             notifier.send(msg)
