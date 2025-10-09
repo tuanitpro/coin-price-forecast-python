@@ -1,6 +1,7 @@
 requests
-pandas
+polars
 numpy
+pyarrow
 statsmodels
 python-dotenv
 scikit-learn
