@@ -10,7 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 RUN pyinstaller --onefile main.py --name app --clean --noconfirm
 
-FROM alpine:3.20
+FROM debian:stable-slim
 WORKDIR /bin
 COPY --from=builder /app/dist/app .
 CMD ["./app"]
