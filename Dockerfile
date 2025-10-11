@@ -11,6 +11,6 @@ COPY . .
 RUN pyinstaller --onefile main.py --name app --clean --noconfirm
 
 FROM debian:stable-slim
-WORKDIR /bin
+WORKDIR /app
 COPY --from=builder /app/dist/app .
 CMD ["./app"]
