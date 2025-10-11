@@ -10,8 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 RUN pyinstaller --onefile main.py --name app --clean --noconfirm
 
-# --- Runtime Stage ---
-FROM python:3.13-slim AS runner
-WORKDIR /app
+FROM alpine:3.20
+WORKDIR /bin
 COPY --from=builder /app/dist/app .
 CMD ["./app"]
