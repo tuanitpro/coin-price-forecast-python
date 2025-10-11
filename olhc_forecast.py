@@ -1,5 +1,4 @@
 import os
-from datetime import datetime, timezone
 import numpy as np
 import polars as pl
 from sklearn.ensemble import RandomForestRegressor
@@ -12,6 +11,8 @@ from telegram import TelegramNotifier
 
 class OLHCForecast:
     def __init__(self):
+        self.interval = os.getenv("INTERVAL", "4h")
+        self.limit = int(os.getenv("LIMIT", 200))
         self.steps = int(os.getenv("STEPS", 5))
         self.symbols = [s.strip().upper() for s in os.getenv("SYMBOLS", "BTCUSDT").split(",")]
         self.threshold = float(os.getenv("PRICE_CHANGE_THRESHOLD", 2))
@@ -121,7 +122,7 @@ class OLHCForecast:
 
         for symbol in self.symbols:
             print(f"\n[INFO] Starting forecast for {symbol} ...")
-            df = binance.fetch(symbol)
+            df = binance.klines(symbol, interval=self.interval, limit=self.limit)
             if df.height < 50:
                 print(f"[WARN] Not enough data for {symbol}")
                 continue
@@ -144,13 +145,12 @@ class OLHCForecast:
             current_price = df_feat["close"].to_list()[-1]
             next_price = preds[0]
             change_pct = (next_price - current_price) / current_price * 100
-
+            klines = binance.klines(symbol, "1d", 1)
+            
             # Build message
             msg = (
                 f"📢 📢 📢 *ML Forecast for #{symbol}*\n"
                 f"Change: {change_pct:+.2f}% ({current_price:.4f} → {next_price:.4f})\n"
-              
-              
             )
 
             if change_pct > self.threshold:
@@ -159,7 +159,8 @@ class OLHCForecast:
                 msg += "Signal: *Sell 🎯*\n"
             else:
                 msg += "Signal: *Hold 🚫*\n"
-
+            msg +=   f"High: {klines["high"][0]:.4f}\n"
+            msg +=   f"Low: {klines["low"][0]:.4f}\n"
             msg +=   f"Current Price: {current_price:.4f}\n"
             msg +=   f"Next Price: {next_price:.4f}\n"
             #msg += f"Time: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}\n"

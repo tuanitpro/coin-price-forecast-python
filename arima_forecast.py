@@ -7,9 +7,10 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 from binance import Binance
 from telegram import TelegramNotifier
 
-
 class ARIMAForecast:
     def __init__(self):
+        self.interval = os.getenv("INTERVAL", "4h")
+        self.limit = int(os.getenv("LIMIT", 200))
         self.steps = int(os.getenv("STEPS", 30))
         self.symbols = [s.strip().upper() for s in os.getenv("SYMBOLS", "DOTUSDT").split(",")]
         self.threshold = float(os.getenv("PRICE_CHANGE_THRESHOLD", 2))
@@ -87,9 +88,9 @@ class ARIMAForecast:
         binance = Binance()
 
         for symbol in self.symbols:
-            print(f"\n[INFO] Starting forecast for {symbol} at {datetime.utcnow()}")
+            print(f"\n[INFO] Starting forecast for {symbol} at {now}")
 
-            df = binance.fetch(symbol)
+            df = binance.klines(symbol, self.interval, self.limit)
             df = pl.from_pandas(df)  # Convert to Polars DataFrame
 
             current_price = df["close"][-1]

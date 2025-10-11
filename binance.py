@@ -10,9 +10,9 @@ class Binance:
         if not self.interval or not self.limit:
             print("[WARN] Binance interval or limit is missing in .env")
 
-    def fetch(self, symbol: str) -> pl.DataFrame:
+    def klines(self, symbol: str, interval: str, limit: int) -> pl.DataFrame:
         url = "https://api.binance.com/api/v3/klines"
-        params = {"symbol": symbol.upper(), "interval": self.interval, "limit": self.limit}
+        params = {"symbol": symbol.upper(), "interval": interval, "limit": limit}
 
         max_retries = 3
         for attempt in range(max_retries):
