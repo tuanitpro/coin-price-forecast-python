@@ -10,8 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 RUN pyinstaller --onefile main.py --name app --clean --noconfirm
 
-#FROM debian:stable-slim
-FROM gcr.io/distroless/static-debian13
+FROM debian:stable-slim
 WORKDIR /app
 COPY --from=builder /app/dist/app .
 CMD ["./app"]
